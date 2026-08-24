@@ -1,0 +1,206 @@
+name: Universal Games Release
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created, published ]
+
+env:
+  UNIVERSAL_PACKAGE: com.universal.games
+  SPEED_DRIFTERS_PKG: com.garena.game.fctw
+  QQ_PKG: com.tencent.tmgp.speedmobile
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    outputs:
+      apk_path: ${{ steps.build.outputs.apk_path }}
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Generate Random Version
+        id: version
+        run: |
+          RANDOM_VERSION=$(echo $RANDOM | md5sum | head -c 8)
+          echo "version=$RANDOM_VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$RANDOM_VERSION" >> $GITHUB_ENV
+
+      - name: Build Universal Games APK
+        id: build
+        run: |
+          ./scripts/build_android.sh \
+            --package com.universal.games \
+            --version ${{ env.VERSION }} \
+            --output ./build/android/
+          echo "apk_path=./build/android/UniversalGames-${{ env.VERSION }}.apk" >> $GITHUB_OUTPUT
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: UniversalGames-Android-${{ env.VERSION }}
+          path: ${{ steps.build.outputs.apk_path }}
+          retention-days: 30
+
+  build-ios:
+    name: Build iOS Package
+    runs-on: macos-latest
+    needs: build-android
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install CocoaPods
+        run: |
+          cd config/ios
+          pod install
+
+      - name: Build iOS Framework
+        run: |
+          ./scripts/build_ios.sh \
+            --package com.universal.games \
+            --version ${{ needs.build-android.outputs.version }}
+          ls -la ./build/ios/
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: UniversalGames-iOS-${{ needs.build-android.outputs.version }}
+          path: ./build/ios/*.framework
+          retention-days: 30
+
+  package-release:
+    name: Package Release
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios]
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: UniversalGames-Android-${{ needs.build-android.outputs.version }}
+          path: ./release/android/
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: UniversalGames-iOS-${{ needs.build-android.outputs.version }}
+          path: ./release/ios/
+
+      - name: Create Release Package
+        run: |
+          mkdir -p ./release/package
+          cp -r ./release/android/* ./release/package/
+          cp -r ./release/ios/* ./release/package/
+          tar -czf UniversalGames-${{ needs.build-android.outputs.version }}.tar.gz -C ./release/package .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Universal Games v${{ needs.build-android.outputs.version }}
+          tag_name: v${{ needs.build-android.outputs.version }}
+          body: |
+            ## Universal Games Package Release
+            
+            ### 🚀 New Features
+            - Performance monitoring with temperature/FPS meters
+            - Thermal management system
+            - GPU & anti-lag optimization
+            - Smoothless performance engine
+            - Real-time notification system
+            
+            ### 📦 Packages Included
+            - **Universal Games**: com.universal.games (v${{ needs.build-android.outputs.version }})
+            - **Speed Drifters**: com.garena.game.fctw (v1.54.0.26207)
+            - **QQ飞车**: com.tencent.tmgp.speedmobile (v1.58.0.50557)
+            
+            ### ⚡ Features
+            - ✅ FPS meter with real-time display
+            - ✅ Temperature monitoring with thermal alerts
+            - ✅ GPU performance optimization
+            - ✅ Anti-lag technology
+            - ✅ Freezer mode for battery saving
+            - ✅ Smoothless performance enhancement
+            - ✅ Notification center integration
+            
+            ### 📱 Platform Support
+            - Android APK (x86, ARM64)
+            - iOS Framework (iOS 13+)
+            
+            ### 🔧 Settings
+            - Enable/Disable performance meters
+            - Toggle thermal management
+            - GPU settings configuration
+            - Notification preferences
+          files: |
+            ./release/package/*
+            UniversalGames-${{ needs.build-android.outputs.version }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-package:
+    name: Publish Universal Package
+    runs-on: ubuntu-latest
+    needs: [package-release]
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish Package
+        run: |
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Update Package Documentation
+        run: |
+          echo "# Universal Games Package v${{ needs.build-android.outputs.version }}" > README.md
+          echo "" >> README.md
+          echo "## Installation" >> README.md
+          echo "```bash" >> README.md
+          echo "npm install @universal/games@${{ needs.build-android.outputs.version }}" >> README.md
+          echo "```" >> README.md
+          echo "" >> README.md
+          echo "## Features" >> README.md
+          echo "- Performance Monitoring" >> README.md
+          echo "- Thermal Management" >> README.md
+          echo "- GPU Optimization" >> README.md
+          echo "- Anti-Lag Technology" >> README.md
+          echo "- Smoothless Performance" >> README.md
+          echo "- Notification System" >> README.md
+
+      - name: Commit Documentation
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "docs: Update README for v${{ needs.build-android.outputs.version }}"
+          file_pattern: README.md
