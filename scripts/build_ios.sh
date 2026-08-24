@@ -30,6 +30,9 @@ VERSION=${VERSION:-"1.0.0"}
 echo "📦 Package: $PACKAGE"
 echo "📌 Version: $VERSION"
 
+# Create build directory
+mkdir -p build/ios
+
 # Build iOS framework
 echo "🔨 Building iOS Framework..."
 
