@@ -1,0 +1,3 @@
+dependencies {
+    implementation 'com.universal.games:universal-games:1.0.0'
+}
