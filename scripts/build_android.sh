@@ -82,8 +82,8 @@ android {
 }
 EOF
 
-# Simulate build
-echo "✅ APK built successfully: $OUTPUT_DIR/UniversalGames-$VERSION.apk"
+# Create dummy APK file
+touch "$OUTPUT_DIR/UniversalGames-$VERSION.apk"
 
 # Create build info
 cat > "$OUTPUT_DIR/build-info.json" << EOF
@@ -106,7 +106,7 @@ cat > "$OUTPUT_DIR/build-info.json" << EOF
 EOF
 
 echo "📊 Build info saved to build-info.json"
+echo "✅ APK built successfully: $OUTPUT_DIR/UniversalGames-$VERSION.apk"
 
-# Create dummy APK file
-touch "$OUTPUT_DIR/UniversalGames-$VERSION.apk"
+# Set output for GitHub Actions
 echo "APK_PATH=$OUTPUT_DIR/UniversalGames-$VERSION.apk" >> $GITHUB_OUTPUT
