@@ -1,0 +1,85 @@
+```gitignore
+# Build directories
+build/
+dist/
+*.xcodeproj
+*.xcworkspace
+*.framework
+*.apk
+*.ipa
+*.aab
+*.dSYM
+*.xcarchive
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+*.xcscheme
+
+# Package managers
+node_modules/
+Pods/
+Podfile.lock
+**/Package.resolved
+**/.gradle/
+**/build/
+**/libs/
+**/classes/
+**/bin/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.logcat
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.properties
+*.plist
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Coverage
+coverage/
+*.cov
+*.lcov
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.p8
+
+# Local configuration
+local.properties
+keystore.properties
+google-services.json
+GoogleService-Info.plist
+
+# Test artifacts
+*.test
+test-results/
+test-output/
+
+# Temporary files
+*.bak
+*.backup
+*.old
+*.orig
