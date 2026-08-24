@@ -30,6 +30,12 @@ jobs:
         platform: [android, ios]
     
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Make Scripts Executable
+        run: chmod +x ./scripts/*.sh
+
       - name: Setup Environment
         run: |
           echo "Building Universal Games Package v${{ github.event.inputs.version }}"
@@ -73,6 +79,12 @@ jobs:
     needs: build
     
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Make Scripts Executable
+        run: chmod +x ./scripts/*.sh
+
       - name: Download Settings
         uses: actions/download-artifact@v3
         with:
@@ -99,6 +111,12 @@ jobs:
     if: always()
     
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Make Scripts Executable
+        run: chmod +x ./scripts/*.sh
+
       - name: Send Success Notification
         if: success()
         run: |
